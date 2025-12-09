@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Christmas Table</title>
+  <style>
+    :root{
+      --bg: #0b1020; /* deep navy */
+      --panel: #111a33;
+      --accent: #b4ff7a; /* soft lime */
+      --accent-2:#74c0fc; /* sky */
+      --text: #e6eef8;
+      --muted: #a0aec0;
+      --danger: #ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; background: radial-gradient(80% 60% at 50% 20%, #121a33 0%, var(--bg) 70%); color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      overflow:hidden;
+    }
+    .app{
+      height:100%; display:flex; flex-direction:column; gap:.75rem; padding: .75rem; 
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:.5rem; 
+      padding:.5rem .75rem; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:16px;
+      backdrop-filter: blur(6px);
+    }
+    header h1{font-size:clamp(18px, 2.6vw, 28px); margin:0; letter-spacing:.3px;}
+    .controls{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap}
+    button, .btn{
+      background: linear-gradient(180deg, #1b264b, #121a33);
+      color:var(--text); border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:.6rem .9rem; font-size:clamp(14px,1.6vw,18px);
+      cursor:pointer; transition: transform .08s ease, background .2s ease, opacity .2s ease; user-select:none;
+      touch-action: manipulation;
+    }
+    button:hover{transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    .ghost{background:transparent; border-color: rgba(255,255,255,.12)}
+    .accent{border-color: transparent; background: linear-gradient(180deg, #8ce99a, #51cf66); color:#0a1a0a;}
+
+    .content{
+      flex:1; display:grid; grid-template-columns: 1fr; grid-template-rows: 1fr; min-height:0;
+    }
+    .card{
+      background: rgba(17,26,51,.6); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding: .75rem; overflow:hidden;
+    }
+
+    /* Map area */
+    #mapView{ position:relative; display:flex; align-items:center; justify-content:center; }
+    svg{ width: min(1400px, 95vw); height: auto; }
+    .continent{ fill:#0f1730; stroke:#3a4a7a; stroke-width:1; transition: fill .15s ease, filter .15s ease; cursor:pointer; }
+    .continent:hover{ filter: drop-shadow(0 0 8px rgba(116,192,252,.6)); fill:#172247; }
+    .label{ fill: #cbd5e1; font-size: 12px; pointer-events:none; }
+
+    /* Modal */
+    .modal-backdrop{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,20,.55); backdrop-filter: blur(2px); z-index:50; }
+    .modal{ width:min(720px, 92vw); max-height:80vh; overflow:auto; background: var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:1rem; }
+    .modal h2{ margin:.25rem 0 .5rem; }
+    .country-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:.6rem; }
+    .country-card{ background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:.75rem; display:flex; align-items:center; gap:.6rem; cursor:pointer; }
+    .country-card:hover{ background: rgba(255,255,255,.06); }
+
+    /* Table/Dishes */
+    #tableView{ display:none; position:relative; }
+    .table-wrap{ width: min(1200px, 94vw); margin: 0 auto; aspect-ratio: 16/9; position:relative; }
+    .table-top{ position:absolute; inset:5% 10%; background: radial-gradient(circle at 50% 40%, #6b4f2c 0%, #4b3418 60%, #34220f 100%); border-radius: 36px; border: 2px solid rgba(255,255,255,.08); box-shadow: inset 0 20px 30px rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.25); }
+    .country-title{ position:absolute; top:0; left:0; padding:.5rem .75rem; background: rgba(0,0,0,.35); border-bottom-right-radius: 12px; border:1px solid rgba(255,255,255,.08); }
+    .dish-grid{ position:absolute; inset:10% 12%; display:grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 1fr; gap: clamp(8px, 1.5vw, 18px); }
+    .dish{
+      background: #1b1b1b; border:1px solid rgba(255,255,255,.08); border-radius: 14px; padding:.4rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; cursor:pointer; text-align:center; 
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .dish:active{ transform: translateY(1px); }
+    .dish .thumb{ width:100%; aspect-ratio:1; border-radius:10px; background:#222; background-size:cover; background-position:center; }
+    .dish .name{ font-size: clamp(12px, 1.3vw, 16px); color:#eaeaea; }
+
+    /* Dish detail modal */
+    .dish-modal .media{ width:100%; aspect-ratio:16/9; background:#101010; border-radius:12px; background-size:cover; background-position:center; border:1px solid rgba(255,255,255,.08); }
+    .muted{ color: var(--muted) }
+
+    /* Idle indicator */
+    .idle-hint{ position:fixed; right:.75rem; bottom:.75rem; font-size:12px; opacity:.7 }
+
+    /* Cursor auto-hide for kiosk */
+    html.hide-cursor, html.hide-cursor *{ cursor:none !important; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <h1>World Christmas Table</h1>
+      <div class="controls">
+        <button id="homeBtn" class="ghost" title="Back to world map">Home</button>
+        <button id="fullscreenBtn" class="ghost" title="Toggle fullscreen">Fullscreen</button>
+        <button id="kioskCursorBtn" class="ghost" title="Hide cursor after inactivity">Auto‑hide cursor</button>
+        <button id="resetIdleBtn" class="accent" title="Reset idle timer">Reset Timer</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section id="mapView" class="card">
+        <!-- Simplified line‑art world map (continents as rough clickable shapes) -->
+        <svg viewBox="0 0 1100 580" role="img" aria-label="World map with clickable continents">
+          <title>World Map</title>
+          <!-- North America -->
+          <g id="NA" class="continent" tabindex="0" aria-label="North America">
+            <path d="M110 120 L 210 80 L 300 100 L 360 160 L 380 210 L 330 230 L 280 230 L 250 200 L 190 210 L 140 180 Z"/>
+            <text class="label" x="240" y="150">North America</text>
+          </g>
+          <!-- South America -->
+          <g id="SA" class="continent" tabindex="0" aria-label="South America">
+            <path d="M330 260 L 360 300 L 360 360 L 340 420 L 330 500 L 300 520 L 280 480 L 300 430 L 300 340 Z"/>
+            <text class="label" x="310" y="360">South America</text>
+          </g>
+          <!-- Europe -->
+          <g id="EU" class="continent" tabindex="0" aria-label="Europe">
+            <path d="M540 120 L 600 110 L 640 130 L 650 160 L 620 170 L 590 160 L 560 150 Z"/>
+            <text class="label" x="600" y="150">Europe</text>
+          </g>
+          <!-- Africa -->
+          <g id="AF" class="continent" tabindex="0" aria-label="Africa">
+            <path d="M590 190 L 630 200 L 660 240 L 660 300 L 640 360 L 610 380 L 580 340 L 580 250 Z"/>
+            <text class="label" x="620" y="270">Africa</text>
+          </g>
+          <!-- Asia -->
+          <g id="AS" class="continent" tabindex="0" aria-label="Asia">
+            <path d="M670 130 L 740 120 L 820 140 L 880 160 L 940 190 L 950 230 L 900 260 L 840 260 L 780 220 L 720 210 L 690 180 Z"/>
+            <text class="label" x="810" y="190">Asia</text>
+          </g>
+          <!-- Oceania -->
+          <g id="OC" class="continent" tabindex="0" aria-label="Oceania">
+            <path d="M900 380 L 940 400 L 980 420 L 960 450 L 920 440 L 890 420 Z"/>
+            <text class="label" x="930" y="430">Oceania</text>
+          </g>
+        </svg>
+      </section>
+
+      <section id="tableView" class="card" aria-live="polite">
+        <div class="table-wrap">
+          <div class="country-title" id="countryTitle">Country</div>
+          <div class="table-top"></div>
+          <div id="dishes" class="dish-grid" aria-label="Dishes grid"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="idle-hint" id="idleHint">Idle reset in: <span id="idleCountdown">--</span>s</div>
+  </div>
+
+  <!-- Continents -> Countries modal -->
+  <div id="countryModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="countryModalTitle">
+    <div class="modal">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.5rem;">
+        <h2 id="countryModalTitle">Select a country</h2>
+        <button id="closeCountryModal" class="ghost">Close</button>
+      </div>
+      <div id="countryList" class="country-grid"></div>
+    </div>
+  </div>
+
+  <!-- Dish details modal -->
+  <div id="dishModal" class="modal-backdrop dish-modal" role="dialog" aria-modal="true" aria-labelledby="dishTitle">
+    <div class="modal">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.5rem;">
+        <h2 id="dishTitle">Dish</h2>
+        <button id="closeDishModal" class="ghost">Close</button>
+      </div>
+      <div id="dishMedia" class="media" style="margin-bottom:.75rem"></div>
+      <div id="dishMeta" class="muted" style="font-size:14px; margin-bottom:.5rem"></div>
+      <div id="dishRecipe"></div>
+    </div>
+  </div>
+
+  <script>
+    /***********************************
+     * Data: Continents -> Countries -> Dishes
+     * Note: All content is static (front‑end only).
+     * Replace/add countries & dishes as needed.
+     ***********************************/
+    const DATA = {
+      NA: {
+        name: 'North America',
+        countries: [
+          { code:'US', name:'United States', dishes:[
+            {
+              name:'Roast Turkey',
+              photo:'https://upload.wikimedia.org/wikipedia/commons/0/0b/Roast_turkey.jpg',
+              thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Roast_turkey.jpg/320px-Roast_turkey.jpg',
+              culture:'Traditional centerpiece for many American holiday dinners, including Christmas in some regions.',
+              recipe:`Preheat oven to 175°C. Season a whole turkey with salt, pepper, herbs, and butter under the skin. Roast until the thickest part of the thigh reaches 74°C (about 3–4.5h depending on size). Rest 20–30 min before carving.`,
+            },
+            {
+              name:'Eggnog',
+              photo:'https://upload.wikimedia.org/wikipedia/commons/e/e3/Eggnog_from_Valley_Malt.jpg',
+              thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Eggnog_from_Valley_Malt.jpg/320px-Eggnog_from_Valley_Malt.jpg',
+              culture:'A rich dairy punch flavored with nutmeg—served with or without alcohol during the holidays.',
+              recipe:`Whisk 6 egg yolks with 1/2 cup sugar until pale. Warm 3 cups milk with cinnamon stick; temper into yolks. Cook gently to 74°C. Stir in 1 cup cream, vanilla, and nutmeg. Chill. Spike with bourbon/rum if desired.`,
+            },
+          ]},
+          { code:'MX', name:'Mexico', dishes:[
+            {
+              name:'Tamales',
+              photo:'https://upload.wikimedia.org/wikipedia/commons/3/38/Tamales_on_a_plate.jpg',
+              thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Tamales_on_a_plate.jpg/320px-Tamales_on_a_plate.jpg',
+              culture:'Steamed masa dough filled with meats, chiles or sweets; popular at Christmas posadas.',
+              recipe:`Prepare masa with lard/shortening and broth. Spread on soaked corn husks, add filling, fold and steam 1–1.5h until set.`,
+            }
+          ]}
+        ]
+      },
+      SA: {
+        name:'South America',
+        countries:[
+          { code:'BR', name:'Brazil', dishes:[
+            {
+              name:'Rabanada',
+              photo:'https://upload.wikimedia.org/wikipedia/commons/9/9a/Rabanada_Brazilian_French_toast.jpg',
+              thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Rabanada_Brazilian_French_toast.jpg/320px-Rabanada_Brazilian_French_toast.jpg',
+              culture:'Christmas‑time fried bread soaked in milk and eggs, dusted with sugar & cinnamon.',
+              recipe:`Slice day‑old bread. Dip in milk seasoned with sugar & cinnamon; then beaten eggs. Fry until golden; toss in cinnamon sugar.`,
+            },
+            {
+              name:'Pernil (Roast Pork)',
+              photo:'https://upload.wikimedia.org/wikipedia/commons/8/87/Pernil_Puerto_Rican_Roast_Pork.jpg',
+              thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Pernil_Puerto_Rican_Roast_Pork.jpg/320px-Pernil_Puerto_Rican_Roast_Pork.jpg',
+              culture:'Roasted marinated pork leg/shoulder commonly served at Christmas dinner in many Brazilian homes.',
+              recipe:`Marinate pork with garlic, citrus, herbs, and pepper overnight. Roast low and slow until tender with crisp skin.`,
+            }
+          ]},
+          { code:'AR', name:'Argentina', dishes:[
+            {
+              name:'Vitel Toné',
+              photo:'https://upload.wikimedia.org/wikipedia/commons/8/86/Vitello_tonnato_1.JPG',
+              thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Vitello_tonnato_1.JPG/320px-Vitello_tonnato_1.JPG',
+              culture:'Chilled veal with tuna‑anchovy caper sauce—classic for Argentine Christmas tables.',
+              recipe:`Simmer veal in aromatics; chill. Blend tuna, anchovies, mayo, capers, lemon. Slice veal thin; cover with sauce; garnish with capers.`,
+            }
+          ]}
+        ]
+      },
+      EU: {
+        name:'Europe',
+        countries:[
+          { code:'IT', name:'Italy', dishes:[
+            { name:'Panettone', photo:'https://upload.wikimedia.org/wikipedia/commons/9/9c/Panettone_%28cropped%29.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Panettone_%28cropped%29.jpg/320px-Panettone_%28cropped%29.jpg', culture:'Dome‑shaped sweet bread with candied fruit, a Christmas staple from Milan.', recipe:'Make enriched dough with yeast, butter, eggs, sugar; proof with fruit; bake tall in a mold.' },
+            { name:'Torrone', photo:'https://upload.wikimedia.org/wikipedia/commons/7/7a/Torrone_Sardegna.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Torrone_Sardegna.jpg/320px-Torrone_Sardegna.jpg', culture:'Honey‑almond nougat, popular across Italy during the holidays.', recipe:'Whisk hot honey/sugar syrup into egg whites to stiff peaks; fold nuts; set and slice.' }
+          ]},
+          { code:'DE', name:'Germany', dishes:[
+            { name:'Stollen', photo:'https://upload.wikimedia.org/wikipedia/commons/6/6e/Christstollen_Weihnachtsstollen.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Christstollen_Weihnachtsstollen.jpg/320px-Christstollen_Weihnachtsstollen.jpg', culture:'Fruit bread with marzipan and powdered sugar—iconic German Christmas loaf.', recipe:'Enriched dough with dried fruit & spices; add marzipan log; bake and coat in butter & sugar.' },
+            { name:'Glühwein', photo:'https://upload.wikimedia.org/wikipedia/commons/5/5f/Gl%C3%BChwein_-_mulled_wine.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Gl%C3%BChwein_-_mulled_wine.jpg/320px-Gl%C3%BChwein_-_mulled_wine.jpg', culture:'Spiced hot wine served at Christmas markets and at home.', recipe:'Warm red wine with orange, cloves, cinnamon, star anise, sugar. Do not boil. Optional shot of rum.' }
+          ]}
+        ]
+      },
+      AF: {
+        name:'Africa',
+        countries:[
+          { code:'ZA', name:'South Africa', dishes:[
+            { name:'Malva Pudding', photo:'https://upload.wikimedia.org/wikipedia/commons/0/0f/Malva_pudding.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Malva_pudding.jpg/320px-Malva_pudding.jpg', culture:'Apricot sponge pudding often enjoyed during festive meals.', recipe:'Bake sponge with apricot jam; pour cream/butter sauce over while hot.' },
+            { name:'Gammon', photo:'https://upload.wikimedia.org/wikipedia/commons/6/6a/Roast_Gammon.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Roast_Gammon.jpg/320px-Roast_Gammon.jpg', culture:'Glazed ham commonly served cold or warm on Christmas Day.', recipe:'Simmer cured gammon; glaze with honey/mustard; roast to caramelize.' }
+          ]}
+        ]
+      },
+      AS: {
+        name:'Asia',
+        countries:[
+          { code:'JP', name:'Japan', dishes:[
+            { name:'Christmas Cake', photo:'https://upload.wikimedia.org/wikipedia/commons/8/81/Christmas_cake_in_Japan.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Christmas_cake_in_Japan.jpg/320px-Christmas_cake_in_Japan.jpg', culture:'Strawberry shortcake style—widely enjoyed on Christmas Eve.', recipe:'Bake sponge; layer with whipped cream & strawberries; decorate with berries.' },
+            { name:'Fried Chicken (Party Barrel)', photo:'https://upload.wikimedia.org/wikipedia/commons/4/46/Fried_chicken_-_Karaage.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Fried_chicken_-_Karaage.jpg/320px-Fried_chicken_-_Karaage.jpg', culture:'Fried chicken has become a popular Christmas meal in Japan.', recipe:'Marinate chicken; dredge in flour/potato starch; fry until crisp.' }
+          ]},
+          { code:'PH', name:'Philippines', dishes:[
+            { name:'Lechon', photo:'https://upload.wikimedia.org/wikipedia/commons/2/2b/Lechon_Cebu.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Lechon_Cebu.jpg/320px-Lechon_Cebu.jpg', culture:'Roast pig—a centerpiece of Noche Buena celebrations.', recipe:'Season whole pig; roast over coals, turning, until skin is crisp and meat tender.' },
+            { name:'Bibingka', photo:'https://upload.wikimedia.org/wikipedia/commons/7/7c/Bibingka_2.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Bibingka_2.jpg/320px-Bibingka_2.jpg', culture:'Rice cake baked in banana leaves and enjoyed after Simbang Gabi.', recipe:'Batter of rice flour, coconut milk, eggs, sugar; bake on banana leaf; top with butter & cheese.' }
+          ]}
+        ]
+      },
+      OC: {
+        name:'Oceania',
+        countries:[
+          { code:'AU', name:'Australia', dishes:[
+            { name:'Pavlova', photo:'https://upload.wikimedia.org/wikipedia/commons/8/86/Pavlova_with_berries.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Pavlova_with_berries.jpg/320px-Pavlova_with_berries.jpg', culture:'Meringue dessert topped with cream and fruit—great for a summer Christmas.', recipe:'Whip egg whites with sugar to stiff peaks; bake low until crisp outside; top with cream & fruit.' },
+            { name:'Prawns on the Barbie', photo:'https://upload.wikimedia.org/wikipedia/commons/7/7e/Shrimp_on_the_barbie.jpg', thumb:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Shrimp_on_the_barbie.jpg/320px-Shrimp_on_the_barbie.jpg', culture:'Grilled prawns are a common feature of Aussie holiday cookouts.', recipe:'Marinate prawns in garlic, lemon, olive oil; grill quickly over high heat.' }
+          ]}
+        ]
+      }
+    };
+
+    /*************** State ***************/
+    let currentContinent = null;
+    let currentCountry = null;
+
+    /*************** Elements ***************/
+    const mapView = document.getElementById('mapView');
+    const tableView = document.getElementById('tableView');
+    const countryTitle = document.getElementById('countryTitle');
+    const dishGrid = document.getElementById('dishes');
+
+    const countryModal = document.getElementById('countryModal');
+    const countryList = document.getElementById('countryList');
+    const closeCountryModalBtn = document.getElementById('closeCountryModal');
+
+    const dishModal = document.getElementById('dishModal');
+    const dishTitle = document.getElementById('dishTitle');
+    const dishMedia = document.getElementById('dishMedia');
+    const dishMeta = document.getElementById('dishMeta');
+    const dishRecipe = document.getElementById('dishRecipe');
+    const closeDishModalBtn = document.getElementById('closeDishModal');
+
+    const homeBtn = document.getElementById('homeBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const kioskCursorBtn = document.getElementById('kioskCursorBtn');
+    const resetIdleBtn = document.getElementById('resetIdleBtn');
+    const idleCountdownEl = document.getElementById('idleCountdown');
+
+    /*************** Map interactions ***************/
+    const CONTINENT_KEYS = ['NA','SA','EU','AF','AS','OC'];
+    CONTINENT_KEYS.forEach(key => {
+      const el = document.getElementById(key);
+      el?.addEventListener('click', () => openCountryModal(key));
+      el?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openCountryModal(key);} });
+    });
+
+    function openCountryModal(continentKey){
+      currentContinent = continentKey;
+      const cont = DATA[continentKey];
+      document.getElementById('countryModalTitle').textContent = `Select a country — ${cont.name}`;
+      countryList.innerHTML = '';
+      cont.countries.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'country-card';
+        card.innerHTML = `<div style="width:42px;height:42px;border-radius:10px;background:rgba(116,192,252,.2);display:flex;align-items:center;justify-content:center;font-weight:700">${c.code}</div>
+                          <div style="display:flex;flex-direction:column;gap:2px"><div style="font-weight:700">${c.name}</div><div class='muted' style='font-size:12px'>${c.dishes.length} dishes</div></div>`;
+        card.addEventListener('click', ()=> selectCountry(c));
+        countryList.appendChild(card);
+      });
+      countryModal.style.display = 'flex';
+    }
+
+    closeCountryModalBtn.addEventListener('click', ()=> countryModal.style.display='none');
+
+    function selectCountry(country){
+      currentCountry = country;
+      countryModal.style.display = 'none';
+      showTableForCountry(country);
+    }
+
+    function showTableForCountry(country){
+      countryTitle.textContent = `${country.name}`;
+      dishGrid.innerHTML = '';
+      const maxSlots = 18; // grid 6x3
+      const items = country.dishes;
+      // Fill with placeholders if fewer items
+      const cells = Array.from({length:maxSlots}, (_,i)=> items[i] || null);
+      cells.forEach((dish,i)=>{
+        const cell = document.createElement('div');
+        cell.className = 'dish';
+        if(dish){
+          cell.innerHTML = `<div class='thumb' style='background-image:url(${dish.thumb || dish.photo})'></div><div class='name'>${dish.name}</div>`;
+          cell.addEventListener('click', ()=> openDish(dish, country));
+          cell.setAttribute('role','button');
+          cell.setAttribute('aria-label', dish.name);
+        } else {
+          cell.style.opacity = .25;
+          cell.innerHTML = `<div class='thumb' style='display:flex;align-items:center;justify-content:center;font-size:12px; color:#888;'>—</div><div class='name' style='color:#666'>Empty</div>`
+        }
+        dishGrid.appendChild(cell);
+      });
+      mapView.style.display = 'none';
+      tableView.style.display = 'block';
+    }
+
+    function openDish(dish, country){
+      dishTitle.textContent = `${dish.name} — ${country.name}`;
+      dishMedia.style.backgroundImage = `url(${dish.photo})`;
+      dishMeta.textContent = dish.culture || '';
+      dishRecipe.innerHTML = `<h3>Recipe (overview)</h3><p>${dish.recipe || ''}</p>`;
+      dishModal.style.display = 'flex';
+    }
+
+    closeDishModalBtn.addEventListener('click', ()=> dishModal.style.display = 'none');
+
+    /*************** Navigation ***************/
+    homeBtn.addEventListener('click', goHome);
+    function goHome(){
+      currentContinent = null; currentCountry = null;
+      tableView.style.display = 'none';
+      mapView.style.display = 'flex';
+    }
+
+    /*************** Fullscreen & Kiosk ***************/
+    fullscreenBtn.addEventListener('click', async ()=>{
+      if(!document.fullscreenElement){
+        try{ await document.documentElement.requestFullscreen(); }catch(e){ console.warn(e); }
+      } else {
+        await document.exitFullscreen();
+      }
+    });
+
+    let hideCursor = false; let cursorTimeout;
+    kioskCursorBtn.addEventListener('click', ()=>{ hideCursor = !hideCursor; kioskCursorBtn.textContent = hideCursor? 'Show cursor' : 'Auto‑hide cursor'; if(!hideCursor) document.documentElement.classList.remove('hide-cursor');});
+    ['mousemove','touchstart','touchmove','mousedown','keydown'].forEach(evt=>{
+      window.addEventListener(evt, ()=>{
+        if(hideCursor){
+          document.documentElement.classList.remove('hide-cursor');
+          clearTimeout(cursorTimeout);
+          cursorTimeout = setTimeout(()=> document.documentElement.classList.add('hide-cursor'), 2000);
+        }
+      }, {passive:true});
+    });
+
+    /*************** Idle timer ***************/
+    const IDLE_SECONDS = 60; // change as needed
+    let idleLeft = IDLE_SECONDS;
+    let idleInterval;
+
+    function resetIdle(){
+      idleLeft = IDLE_SECONDS; idleCountdownEl.textContent = idleLeft;
+      if(!idleInterval){ idleInterval = setInterval(()=>{
+        idleLeft--; idleCountdownEl.textContent = Math.max(0, idleLeft);
+        if(idleLeft<=0){
+          clearInterval(idleInterval); idleInterval=null; goHome(); resetIdle();
+        }
+      }, 1000); }
+    }
+
+    resetIdle();
+    resetIdleBtn.addEventListener('click', resetIdle);
+    ['mousemove','touchstart','touchmove','mousedown','keydown'].forEach(evt=> window.addEventListener(evt, ()=>{ idleLeft = IDLE_SECONDS; idleCountdownEl.textContent = idleLeft; }, {passive:true}));
+
+    /*************** Start on Map ***************/
+    goHome();
+  </script>
+</body>
+</html>
