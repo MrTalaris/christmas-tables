@@ -75,9 +75,13 @@ function changePage(newPageId) {
     })
 
     if (newPageId != "map"){
-        jQuery("#btn-map").show();
+        jQuery(".btn-map").show();
+        jQuery("#btn-fullscreen").hide();
+        jQuery("#btn-cursor").hide();
     }else {
-        jQuery("#btn-map").hide();
+        jQuery(".btn-map").hide();
+        jQuery("#btn-fullscreen").show();
+        jQuery("#btn-cursor").show();
     }
 
     // Hide modals and backdrop when changing page
@@ -97,7 +101,7 @@ jQuery("[page-id]").on("click", function() {
 
 // Return to map button
 
-jQuery("#btn-map").on("click", function() {
+jQuery(".btn-map").on("click", function() {
     changePage("map");
 })
 

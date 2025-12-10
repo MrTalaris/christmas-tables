@@ -13,7 +13,6 @@ img{
     -khtml-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
-    user-drag: none;
 }
 
 #top-menu {
@@ -58,7 +57,7 @@ img{
     display: none;
 }
 
-#btn-map {
+.btn-map {
     width: 7em !important;
     height: 7em !important;
     display: none;
