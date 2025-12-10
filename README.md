@@ -39,5 +39,5 @@ This project follows the [MIT License](https://mit-license.org/).
 
 ## Credits
 
-*Concept, code, and design* - **Kevin Talarico** 
+*Concept, code, and design* - **Kevin Talarico** \
 *Flag images* - **[Flagpedia.net](https://flagpedia.net/)**
